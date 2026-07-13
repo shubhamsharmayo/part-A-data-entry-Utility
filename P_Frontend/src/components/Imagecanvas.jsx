@@ -191,7 +191,7 @@ export default function ImageCanvas({
     try {
       const response = await axios({
         method: method,
-        url: `${apiurl}${endpoint}`,
+        url: `${apiurl}/${endpoint}`,
         data: formdata,
         headers: { 'Content-Type': 'multipart/form-data' },
       })
