@@ -36,7 +36,7 @@ const getMetaData = async (req, res) => {
     const [metaData, mappedData] = await Promise.all([
       MetaData.findAll({where: { templateId: templateId }, }),
       MappedData.findAll({
-        where: { templeteId: templateId }, // Fixed typo from `templeteId` to `templateId`
+        where: { templateId: templateId }, // Fixed typo from `templeteId` to `templateId`
         attributes: ["key", "value"],
       }),
     ]);

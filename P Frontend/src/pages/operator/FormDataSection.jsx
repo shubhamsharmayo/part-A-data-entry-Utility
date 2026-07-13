@@ -21,7 +21,7 @@ const FormDataEntrySection = ({
       const fetchData = async () => {
         try {
           const response = await dataEntryMetaData(
-            taskData.templeteId,
+            taskData.templateId,
             columnName
           );
           const data = response.data;
