@@ -2,7 +2,7 @@
 import Template from "../../models/template.js";
 import Assigndata from "../../models/assigndata.js";
 import sequelize from "../../utils/database.js";
-
+import Files from "../../models/filedata.js";
 
 
 // function validateUpdatedData(joinedData = [], updatedData = {}) {
@@ -279,6 +279,7 @@ const updateMainCsvData = async (req, res) => {
         if (!template) {
             return res.status(404).json({ message: "Template not found" });
         }
+        const fileData = await Files.findOne({ where: { templateId: template.id } })
 
         const assignedTask = await Assigndata.findByPk(taskId);
         // console.log(assignedTask)
@@ -295,6 +296,23 @@ const updateMainCsvData = async (req, res) => {
         //     .status(400)
         //     .json({ status: 400, message: "Invalid result object" });
         // }
+        const masterRollQuery = `SELECT ${template.rollNoCol} FROM ${fileData.masterTable}`
+        const [masterRoll] = await sequelize.query(masterRollQuery)
+        const rollnumbers = masterRoll.map(roll => roll[template.rollNoCol])
+        console.log("____+++++++++++++++++++++++++++")
+        // console.log(rollnumbers)
+
+        const exists = rollnumbers.includes(updatedData[template.rollNoCol]);
+       
+
+        if (!exists&&!masterdataFlag) {
+           return res.status(400).json({
+                message: "Roll number not found in master data"
+            })
+        }
+
+
+
         // Step 1: Fetch existing Corrected data
         const [existingData] = await sequelize.query(
             `SELECT Corrected FROM ${tableName} WHERE parentId = :parentId`,
@@ -329,9 +347,9 @@ const updateMainCsvData = async (req, res) => {
                 email: email,
                 parentId,
                 updatedData: JSON.stringify(updatedCorrected),
-                absentflag:absentFlag,
-                NotInMasterData:masterdataFlag,
-                blank:blankFlag
+                absentflag: absentFlag,
+                NotInMasterData: masterdataFlag,
+                blank: blankFlag
             },
             type: sequelize.QueryTypes.UPDATE,
         });

@@ -72,8 +72,14 @@ async function insertDataIntoTable(tableName, data, batchSize = 500) {
 }
 
 
-async function createDynamicTable(headers) {
-  const tableName = `Table_${Date.now()}`; // Unique table name
+async function createDynamicTable(headers, type) {
+  let tableName
+  if(type==="master"){
+    tableName= `Master_${Date.now()}`
+  }else{
+   tableName = `Table_${Date.now()}`; // Unique table name
+
+  }
   const columns = {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true }, // Explicitly set primary key
   };
@@ -253,8 +259,10 @@ fileData = await Files.findOne({where:{templateId:templateData.id}})
 // }
   // create dynamic table 
   const col = Object.keys(data[0])
+  const masterCol = Object.keys(masterCsvData[0])
   // console.log(col);
-  const { tableName, DynamicModel } = await createDynamicTable(col)
+  const { tableName, DynamicModel } = await createDynamicTable(col,"scanned")
+  const masterTable = await createDynamicTable(masterCol,"master")
 
   // save tablename in template data
 
@@ -262,11 +270,15 @@ fileData = await Files.findOne({where:{templateId:templateData.id}})
   // console.log(savedData)
 
   // divide the data from csv into chunks and store the data in chunks
-  const chunkdata = chunkArray(data, 5)
+  const chunkdata = chunkArray(data, 500)
+  const masterChunks = chunkArray(masterCsvData,500)
   // console.log(chunkdata.length)
 
   for (let i = 0; i < chunkdata.length; i++) {
     insertDataIntoTable(tableName, chunkdata[i])
+  }
+  for (let i = 0; i < masterChunks.length; i++) {
+    insertDataIntoTable(masterTable.tableName, masterChunks[i])
   }
   const mergedData = await mergeCSVFiles([req.files.scannedCsv[0].filename])
 
@@ -285,6 +297,7 @@ fileData = await Files.findOne({where:{templateId:templateData.id}})
 
 fileData = await Files.create({
     scannedCsvTable: tableName,
+    masterTable:masterTable.tableName,
     scannedCsvFile: scannedCsv.filename,
     masterDataFile: masterCsv.filename,
     absentCsvFile: absentCsv.filename,

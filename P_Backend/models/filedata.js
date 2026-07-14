@@ -7,15 +7,19 @@ const Files = sequelize.define("filedata", {
         type: Sequelize.STRING,
         defaultValue: null,
     },
+    masterTable: {
+        type: Sequelize.STRING,
+        defaultValue: null,
+    },
     scannedCsvFile: {
         type: Sequelize.STRING,
         defaultValue: null,
     },
-    masterDataFile:{
+    masterDataFile: {
         type: Sequelize.STRING,
         defaultValue: null,
     },
-    absentCsvFile:{
+    absentCsvFile: {
         type: Sequelize.STRING,
         defaultValue: null,
     },
@@ -32,13 +36,13 @@ const Files = sequelize.define("filedata", {
         type: Sequelize.INTEGER,
     },
     templateId: {
-    type: Sequelize.INTEGER,
-    allowNull: false,
-    references: {
-      model: "templates", // 'Templete' refers to the table name
-      key: "id",
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+            model: "templates", // 'Templete' refers to the table name
+            key: "id",
+        },
     },
-  },
 });
 
 export default Files;
