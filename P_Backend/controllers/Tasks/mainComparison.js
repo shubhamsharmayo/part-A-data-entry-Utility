@@ -103,7 +103,7 @@ const mainComparison = async (req, res) => {
   const assignData = await Assigndata.findByPk(id)
 
   const fileData = await Files.findByPk(assignData.fileId)
-  const { scannedCsvTable, scannedCsvFile, masterDataFile, absentCsvFile, templateId } = fileData
+  const { scannedCsvTable, scannedCsvFile, masterDataFile, absentCsvFile, templateId, startIndex } = fileData
   // console.log(fileData)
   const { rollNoCol, patternDefinition, blankDefination, csvTableName, imageColName } = await Template.findByPk(templateId)
   // console.log(rollNoCol)
@@ -254,7 +254,7 @@ const mainComparison = async (req, res) => {
     formField.splice(index, 1);
   }
 
- 
+
 
 
   const tableQuery = `SELECT * FROM ${scannedCsvTable}`
@@ -322,16 +322,40 @@ const mainComparison = async (req, res) => {
   }
 
   console.log(result.length);
+
+
+
+  const query = `
+      SELECT * FROM \`${csvTableName}\`
+      WHERE id BETWEEN :min AND :max`;
+
+  const filteredData = await sequelize.query(query, {
+    replacements: {
+      min:
+        Number(startIndex) === 1
+          ? Number(assignData.min)
+          : Number(assignData.min) + Number(startIndex),
+      max:
+        Number(startIndex) === 1
+          ? Number(assignData.max)
+          : Number(assignData.max) + Number(startIndex),
+
+    },
+    type: sequelize.QueryTypes.SELECT,
+  });
   // res.json(result)
 
-  const filteredResult = result.map(({ id, Reason }) => ({
-    parentId: id,
-    reason: Reason,
-    absentflag: false,
-    NotInMasterData: false,
-    Blank: false
+  const filteredResult = filteredData.map(({ id }) => {
+    const rs = result.find(item => item.id === id);
 
-  }))
+    return {
+      parentId: id,
+      reason: rs?.Reason || null, // if result has a Reason field
+      absentflag: false,
+      NotInMasterData: false,
+      Blank: false,
+    };
+  });
 
 
   const assignedTableName = await processAndInsertCSV(filteredResult);
@@ -372,7 +396,7 @@ const mainComparison = async (req, res) => {
     // console.log(resultTwo)
     const imageName = resultTwo[imageColName];
     const baseName = path.basename(imageName);
-   
+
     const formData = {};
     const questionData = {};
 
