@@ -11,6 +11,10 @@ const Files = sequelize.define("filedata", {
         type: Sequelize.STRING,
         defaultValue: null,
     },
+    absentTable: {
+        type: Sequelize.STRING,
+        defaultValue: null,
+    },
     scannedCsvFile: {
         type: Sequelize.STRING,
         defaultValue: null,

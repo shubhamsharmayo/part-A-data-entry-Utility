@@ -74,11 +74,13 @@ async function insertDataIntoTable(tableName, data, batchSize = 500) {
 
 async function createDynamicTable(headers, type) {
   let tableName
-  if(type==="master"){
-    tableName= `Master_${Date.now()}`
-  }else{
-   tableName = `Table_${Date.now()}`; // Unique table name
+  if (type === "master") {
+    tableName = `Master_${Date.now()}`
+  } else if (type === "scanned") {
+    tableName = `Table_${Date.now()}`; // Unique table name
 
+  } else {
+    tableName = `Absent_${Date.now()}`
   }
   const columns = {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true }, // Explicitly set primary key
@@ -120,7 +122,7 @@ async function mergeCSVFiles(fileNames) {
   let headersSet = new Set(); // Stores headers from the first file
   let mergedRecords = [];
   let firstFileHeaders = null;
-// console.log(__dirname)
+  // console.log(__dirname)
   for (const [index, fileName] of fileNames.entries()) {
     const filePath = path.join(__dirname, "../../csvUploads/", fileName);
 
@@ -224,99 +226,106 @@ const saveImageAndRollCol = async (id, imageName, rollNo, tableName) => {
 
 
 const fileDataFn = async (id, savedtable, scannedcsv, absentcsv, mastercsv, imagerar, datalength) => {
- 
+
 }
 
 const csvAndImageUpload = async (req, res) => {
   try {
-      // const data = await csv().fromFile(req.files.scannedCsv[0].path);
-  console.log(req.files)
-  const templateData = JSON.parse(req.body.selectedTemplate)
-  console.log(templateData)
-  const data = await csvToJson(req.files.scannedCsv[0].path)
-  const absentCsvData = await csvToJson(req.files.absentCsv[0].path)
-  const masterCsvData = await csvToJson(req.files.overallCsv[0].path)
-  const imageRarData = await csvToJson(req.files.rarFile[0].path)
-  const scannedCsv = req.files.scannedCsv[0]
-  const absentCsv = req.files.absentCsv[0]
-  const masterCsv = req.files.overallCsv[0]
-  const imageRar = req.files.rarFile[0]
-  // console.log(imageRar)
+    // const data = await csv().fromFile(req.files.scannedCsv[0].path);
+    console.log(req.files)
+    const templateData = JSON.parse(req.body.selectedTemplate)
+    console.log(templateData)
+    const data = await csvToJson(req.files.scannedCsv[0].path)
+    const absentCsvData = await csvToJson(req.files.absentCsv[0].path)
+    const masterCsvData = await csvToJson(req.files.overallCsv[0].path)
+    const imageRarData = await csvToJson(req.files.rarFile[0].path)
+    const scannedCsv = req.files.scannedCsv[0]
+    const absentCsv = req.files.absentCsv[0]
+    const masterCsv = req.files.overallCsv[0]
+    const imageRar = req.files.rarFile[0]
+    // console.log(imageRar)
 
-  const { id } = templateData
-  const { imageName, rollCol } = req.body
+    const { id } = templateData
+    const { imageName, rollCol } = req.body
 
-  const timestamp = Math.floor(Date.now() / 1000);
+    const timestamp = Math.floor(Date.now() / 1000);
 
-let fileData
+    let fileData
 
-fileData = await Files.findOne({where:{templateId:templateData.id}})
+    fileData = await Files.findOne({ where: { templateId: templateData.id } })
 
-// if(fileData){
-//   return res.status(409).json({
-//     message: "Data already assigned to this template"
-//   })
-// }
-  // create dynamic table 
-  const col = Object.keys(data[0])
-  const masterCol = Object.keys(masterCsvData[0])
-  // console.log(col);
-  const { tableName, DynamicModel } = await createDynamicTable(col,"scanned")
-  const masterTable = await createDynamicTable(masterCol,"master")
+    // if(fileData){
+    //   return res.status(409).json({
+    //     message: "Data already assigned to this template"
+    //   })
+    // }
+    // create dynamic table 
+    const col = Object.keys(data[0])
+    const masterCol = Object.keys(masterCsvData[0])
+    const absentCol = Object.keys(absentCsvData[0])
+    // console.log(col);
+    const { tableName, DynamicModel } = await createDynamicTable(col, "scanned")
+    const masterTable = await createDynamicTable(masterCol, "master")
+    const absentTable = await createDynamicTable(masterCol, "absent")
 
-  // save tablename in template data
+    // save tablename in template data
 
-  const savedData = saveImageAndRollCol(id, imageName, rollCol, tableName)
-  // console.log(savedData)
+    const savedData = saveImageAndRollCol(id, imageName, rollCol, tableName)
+    // console.log(savedData)
 
-  // divide the data from csv into chunks and store the data in chunks
-  const chunkdata = chunkArray(data, 500)
-  const masterChunks = chunkArray(masterCsvData,500)
-  // console.log(chunkdata.length)
+    // divide the data from csv into chunks and store the data in chunks
+    const chunkdata = chunkArray(data, 500)
+    const masterChunks = chunkArray(masterCsvData, 500)
+    const absentChunks = chunkArray(absentCsvData, 500)
+    // console.log(chunkdata.length)
 
-  for (let i = 0; i < chunkdata.length; i++) {
-    insertDataIntoTable(tableName, chunkdata[i])
-  }
-  for (let i = 0; i < masterChunks.length; i++) {
-    insertDataIntoTable(masterTable.tableName, masterChunks[i])
-  }
-  const mergedData = await mergeCSVFiles([req.files.scannedCsv[0].filename])
+    for (let i = 0; i < chunkdata.length; i++) {
+      insertDataIntoTable(tableName, chunkdata[i])
+    }
+    for (let i = 0; i < masterChunks.length; i++) {
+      insertDataIntoTable(masterTable.tableName, masterChunks[i])
+    }
+    for (let i = 0; i < absentChunks.length; i++) {
+      insertDataIntoTable(absentTable.tableName, absentChunks[i])
+    }
+    const mergedData = await mergeCSVFiles([req.files.scannedCsv[0].filename])
 
-  console.log(mergedData.length);
+    console.log(mergedData.length);
 
-  const finalFilePath = path.join(__dirname,"../../csvUploads",imageRar.filename)
+    const finalFilePath = path.join(__dirname, "../../csvUploads", imageRar.filename)
 
     const destinationFolderPath = path.join(
-          __dirname,
-          "../../extractedFiles",
-          `${timestamp}_${imageRar.originalname}`
-        );
+      __dirname,
+      "../../extractedFiles",
+      `${timestamp}_${imageRar.originalname}`
+    );
 
 
-   await extractZipFile(finalFilePath, destinationFolderPath);
+    await extractZipFile(finalFilePath, destinationFolderPath);
 
-fileData = await Files.create({
-    scannedCsvTable: tableName,
-    masterTable:masterTable.tableName,
-    scannedCsvFile: scannedCsv.filename,
-    masterDataFile: masterCsv.filename,
-    absentCsvFile: absentCsv.filename,
-    zipFile: `${timestamp}_${imageRar.originalname}`,
-    startIndex:1,
-    totalFiles:mergedData.length,
-    templateId:templateData.id
-  })
+    fileData = await Files.create({
+      scannedCsvTable: tableName,
+      masterTable: masterTable.tableName,
+      absentTable:absentTable.tableName,
+      scannedCsvFile: scannedCsv.filename,
+      masterDataFile: masterCsv.filename,
+      absentCsvFile: absentCsv.filename,
+      zipFile: `${timestamp}_${imageRar.originalname}`,
+      startIndex: 1,
+      totalFiles: mergedData.length,
+      templateId: templateData.id
+    })
 
-  // console.log(DynamicModel);
-  // console.log(req.body)
-  // console.log(JSON.parse(req.body.selectedTemplate))
+    // console.log(DynamicModel);
+    // console.log(req.body)
+    // console.log(JSON.parse(req.body.selectedTemplate))
 
-  res.status(200).json({
-    message:"Table Created",
-    fileData
-  })
+    res.status(200).json({
+      message: "Table Created",
+      fileData
+    })
   } catch (error) {
-     console.log(error);
+    console.log(error);
   }
 
 }

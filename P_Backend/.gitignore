@@ -24,3 +24,4 @@ dist-ssr
 *.sw?
 extractedFiles
 csvUploads
+uploads

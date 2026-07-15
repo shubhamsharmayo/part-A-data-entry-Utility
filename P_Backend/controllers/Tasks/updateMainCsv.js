@@ -312,6 +312,18 @@ const updateMainCsvData = async (req, res) => {
         }
 
 
+        const absentRollQuery = `SELECT ${template.rollNoCol} FROM ${fileData.absentTable}`
+        const [absentRoll] = await sequelize.query(absentRollQuery)
+        const absentRollnumbers = absentRoll.map(roll => roll[template.rollNoCol])
+        const rollExists = absentRollnumbers.includes(updatedData[template.rollNoCol]);
+
+
+        if (rollExists&&!absentFlag) {
+           return res.status(400).json({
+                message: "Roll number is absent"
+            })
+        }
+
 
         // Step 1: Fetch existing Corrected data
         const [existingData] = await sequelize.query(

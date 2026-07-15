@@ -345,17 +345,21 @@ const mainComparison = async (req, res) => {
   });
   // res.json(result)
 
-  const filteredResult = filteredData.map(({ id }) => {
-    const rs = result.find(item => item.id === id);
+  const filteredResult = filteredData
+    .map(({ id }) => {
+      const rs = result.find(item => item.id == id);
 
-    return {
-      parentId: id,
-      reason: rs?.Reason || null, // if result has a Reason field
-      absentflag: false,
-      NotInMasterData: false,
-      Blank: false,
-    };
-  });
+      if (!rs) return null;
+
+      return {
+        parentId: id,
+        reason: rs.Reason ?? null,
+        absentflag: false,
+        NotInMasterData: false,
+        Blank: false,
+      };
+    })
+    .filter(Boolean);
 
 
   const assignedTableName = await processAndInsertCSV(filteredResult);
