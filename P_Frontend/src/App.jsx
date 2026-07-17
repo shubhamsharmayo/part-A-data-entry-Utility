@@ -13,6 +13,9 @@ import { userData } from './context/userData'
 import Navbar from './components/Navbar/Navbar'
 import Csvuploader from './pages/csvUploader/Csvuploader'
 import TemplateMapping from './pages/templateMapping/TemplateMapping'
+    // sj
+import DuplicateDetector from './pages/duplicateDetector/DuplicateDetector'
+    // {/* sj */}
 import TaskManager from './pages/TaskManager/TaskManager'
 import AdminAssigned from './pages/dataMatching/Adminassigned'
 import UserTaskAssined from './pages/operator/UserTaskAssined'
@@ -65,6 +68,9 @@ function App() {
         {(role === "Admin" || role === "Operator") && permissions.csvuploader && (
           <>
             <Route path='/csvuploader' element={<Csvuploader />} />
+                    {/* sj */}
+            <Route path="/csvuploader/duplicatedetector/:id" element={<DuplicateDetector />} />
+                {/* sj */}
             {/* <Route path='/imagemapping' element={<Imagescanner />} /> */}
             <Route path="/csvuploader/templatemapping/:id" element={<TemplateMapping />} />
             <Route path='/csvuploader/assigntask/:id' element={<TaskManager />} />

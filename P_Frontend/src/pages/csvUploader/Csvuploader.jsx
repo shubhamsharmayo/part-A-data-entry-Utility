@@ -164,7 +164,10 @@ const Csvuploader = () => {
             toast.error(response)
             localStorage.setItem('fileId', JSON.stringify(response.data.fileData))
 
-            navigate(`/csvuploader/templatemapping/${data.id}`);
+            // navigate(`/csvuploader/templatemapping/${data.id}`);
+                 // sj
+            navigate(`/csvuploader/duplicatedetector/${data.id}`);
+                // {/* sj */}
         } catch (error) {
             if (error.response) {
                 if (error.response.status === 409) {

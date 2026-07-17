@@ -16,6 +16,10 @@ import getTotalCsvDataController from '../../controllers/template/getTotalCsvDat
 import assignUser from '../../controllers/template/assignTask.js'
 import downloadSeparateCsv from '../../controllers/template/downloadcsv.js'
 
+// sj
+import findDuplicatesController from '../../controllers/template/findDuplicates.js'
+// sj
+
 
 router.post('/template/createtemplate', upload.single("image"), templateDataUpload)
 router.get('/template/alltemplate', getAllTemplate)
@@ -45,5 +49,8 @@ router.post('/template/mapdata', handleData)
 router.get('/gettotaldata', getTotalCsvDataController)
 router.post("/assign/user", assignUser);
 router.get('/download/separatecsv/:id',downloadSeparateCsv)
+
+// sj
+router.get('/template/findduplicates/:id', findDuplicatesController)
 
 export default router
