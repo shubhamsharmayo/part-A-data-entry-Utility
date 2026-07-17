@@ -55,7 +55,44 @@ const FormDataEntrySection = ({
     } else {
       setInvalidMap((prev) => ({ ...prev, [key]: false }));
     }
+  // sj datafield type and length 
     if (!isDeletion) {
+      // --- Dynamic Field Type Restriction ---
+      const allowedCharsByType = {
+        alpha: "a-zA-Z",
+        numeric: "0-9",
+        alphanumeric: "a-zA-Z0-9",
+      };
+      const dataFieldType = (imageData?.dataFieldType || "").toLowerCase();
+      const baseAllowedChars = allowedCharsByType[dataFieldType];
+
+      if (baseAllowedChars) {
+        const specialChars = [patternDef, blank].filter(Boolean).join("");
+        const escapedSpecial = specialChars.replace(
+          /[.*+?^${}()|[\]\\]/g,
+          "\\$&"
+        );
+        const allowedRegex = new RegExp(
+          `^[${baseAllowedChars}${escapedSpecial}]*$`
+        );
+
+        if (!allowedRegex.test(newValue)) {
+          return;
+        }
+      }
+     
+
+       // --- Dynamic Length Restriction ---
+      // imageData.fieldLength comes from DB (set by admin while creating the
+      // template). Operator can't type more characters than this.
+      const maxLength = parseInt(imageData?.fieldLength, 10);
+
+      if (!isNaN(maxLength) && newValue.length > maxLength) {
+        // Already at (or over) the allowed length — block the extra keystroke.
+        return;
+      }
+       // sj datafield type and length 
+
       // block if pattern not allowed and newValue contains the pattern
       if (!imageData.pattern && patternDef && newValue.includes(patternDef)) {
         return;
@@ -66,15 +103,7 @@ const FormDataEntrySection = ({
         return;
       }
 
-      // block empty only when user tries to set empty by typing (rare) or pasting.
-      // Note: we still allow deletion to empty so backspace works — but you can change this behavior if you want.
-      if (!imageData.empty && newValue.trim() === "") {
-        // Option A (recommended UX): allow deletion but mark invalid
-        // return; // <-- Uncomment this line to block typing into empty if you prefer
-        // Example: set an error state instead and allow the UI to handle it
-        // setErrorForKey(key, "Field cannot be empty");
-        // We will allow deletion so backspace works.
-      }
+      // ... (baaki neeche same rahega, tumne kuch delete nahi karna)
     }
 
     // Passed validation — update editedData
