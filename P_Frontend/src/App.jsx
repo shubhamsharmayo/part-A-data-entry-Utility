@@ -21,6 +21,7 @@ import AdminAssigned from './pages/dataMatching/Adminassigned'
 import UserTaskAssined from './pages/operator/UserTaskAssined'
 import DataMapping from './pages/operator/DataMapping'
 import PageNotFound from './components/PageNotFound'
+
 function App() {
 
   const { userDetail, setUser } = userData()
@@ -56,6 +57,7 @@ function App() {
           <>
 
             <Route path='/signup' element={<SignUp />} />
+           
           </>
         )}
         {(role === "Admin" || role === "Operator") && permissions.createTemplate && (

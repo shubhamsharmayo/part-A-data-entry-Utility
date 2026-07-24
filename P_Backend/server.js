@@ -51,6 +51,7 @@ app.use('/api/uploads', express.static('uploads'));
 app.use("/api",userRoute)
 app.use("/api",template)
 app.use("/api",TaskRoute)
+
 app.get("/*path", (req, res) => {
   res.sendFile(path.join(builtPath, "index.html"));
 });

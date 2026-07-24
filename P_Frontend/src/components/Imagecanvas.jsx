@@ -4,6 +4,7 @@ import OptionGenerator from '../components/saveconfirm/Confirmation'
 import { useTemplate } from "../context/templateData";
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom';
+import { toast } from "react-toastify";
 
 const apiurl = import.meta.env.VITE_URL
 
@@ -197,6 +198,7 @@ export default function ImageCanvas({
       })
       console.log(response)
       if (response?.data?.message?.includes('successfully') || response?.data?.message) {
+        toast.success("Template Created")
         navigate(redirectOnSuccess)
       }
     } catch (err) {

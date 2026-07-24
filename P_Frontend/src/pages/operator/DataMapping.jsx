@@ -32,6 +32,9 @@ const DataMapping = () => {
   const [absentFlag, setabsentFlag] = useState(false)
   const [masterDataFlag, setmasterDataFlag] = useState(false)
   const [blankFlag, setblankFlag] = useState(false)
+    //   sj checkbox
+  const [duplicateFlag, setduplicateFlag] = useState(false)
+    //   sj checkbox
   // console.log(invalidMap);
   const imageRef = useRef(null);
   const inputRefs = useRef({});
@@ -119,7 +122,10 @@ const DataMapping = () => {
         console.log(response.data)
         setabsentFlag(response.data.absentflag)
         setmasterDataFlag(response.data.NotInMasterData)
-        setblankFlag(response.data.blank)
+      setblankFlag(response.data.blank)
+        //   sj checkbox
+        setduplicateFlag(response.data.duplicateflag)
+          //   sj checkbox
         setData(response.data);
       } catch (err) {
         if (controller.signal.aborted) return;
@@ -308,9 +314,12 @@ const DataMapping = () => {
       editedData: editedData,
       updatedData: mergedData,
       email:userData.user.email,
-      absentFlag:absentFlag,
+       absentFlag:absentFlag,
       masterdataFlag:masterDataFlag,
-      blankFlag:blankFlag
+      blankFlag:blankFlag,
+        //   sj checkbox
+      duplicateFlag:duplicateFlag
+        //   sj checkbox
     };
     // console.log(data.id);
     // console.log(obj);
@@ -412,6 +421,10 @@ const DataMapping = () => {
             absentFlag={absentFlag}
             masterDataFlag={masterDataFlag}
             blankFlag={blankFlag}
+              //   sj checkbox
+            duplicateFlag={duplicateFlag}
+            setduplicateFlag={setduplicateFlag}
+              //   sj checkbox
           />
         </div>
       </div>

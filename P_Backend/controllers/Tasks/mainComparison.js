@@ -11,15 +11,33 @@ import { DataTypes, QueryTypes, Op } from "sequelize";
 import MetaData from "../../models/metadata.js";
 import MappedData from "../../models/mappedData.js";
 import getAllDirectories from "../../services/directoryFinder.js";
-
-
+//  checxk box sj
+import { checkIsDuplicateRollNo } from "../../services/duplicateRollCheck.js";
+//check box sj
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// // sj show duplicate
 
+// function isPlaceholderRollNo(value) {
+//   const trimmed = String(value ?? "").trim();
+//   if (trimmed === "") return true;
+//   if (/^\*+$/.test(trimmed)) return true;
+//   return false;
+// }
 
+// async function checkIsDuplicateRollNo(rollNoValue, tableName, rollNoCol) {
+//   if (isPlaceholderRollNo(rollNoValue)) return false;
 
+//   const dupQuery = `SELECT COUNT(*) as cnt FROM \`${tableName}\` WHERE \`${rollNoCol}\` = :rollNoValue`;
+//   const [dupResult] = await sequelize.query(dupQuery, {
+//     replacements: { rollNoValue },
+//     type: sequelize.QueryTypes.SELECT,
+//   });
 
+//   return Number(dupResult.cnt) > 1;
+// }
+// sj show duplicate
 
 async function createDynamicTable(headers) {
   const tableName = `assign_${Date.now()}`; // Unique table name
@@ -39,11 +57,11 @@ async function createDynamicTable(headers) {
     ) {
       columns[normalizedHeader] = { type: DataTypes.TEXT }; // Large text-based columns
     } else if (normalizedHeader.toLowerCase().includes("barcode")) {
-      columns[normalizedHeader] = { type: DataTypes.TEXT('long') }; // Reduce barcode size
+      columns[normalizedHeader] = { type: DataTypes.TEXT("long") }; // Reduce barcode size
     } else if (normalizedHeader.match(/^q[0-9]+$/i)) {
-      columns[normalizedHeader] = { type: DataTypes.TEXT('long') }; // Short answers (e.g., A, B, C, D, etc.)
+      columns[normalizedHeader] = { type: DataTypes.TEXT("long") }; // Short answers (e.g., A, B, C, D, etc.)
     } else {
-      columns[normalizedHeader] = { type: DataTypes.TEXT('long') }; // Default reduced VARCHAR size
+      columns[normalizedHeader] = { type: DataTypes.TEXT("long") }; // Default reduced VARCHAR size
     }
   });
 
@@ -89,26 +107,29 @@ async function processAndInsertCSV(mergedRecords) {
   return { tableName, headersArray };
 }
 
-
-
-
-
-
-
 const mainComparison = async (req, res) => {
+  const { id } = req.params;
 
-  const { id } = req.params
+  const assignData = await Assigndata.findByPk(id);
 
-
-  const assignData = await Assigndata.findByPk(id)
-
-  const fileData = await Files.findByPk(assignData.fileId)
-  const { scannedCsvTable, scannedCsvFile, masterDataFile, absentCsvFile, templateId, startIndex } = fileData
+  const fileData = await Files.findByPk(assignData.fileId);
+  const {
+    scannedCsvTable,
+    scannedCsvFile,
+    masterDataFile,
+    absentCsvFile,
+    templateId,
+    startIndex,
+  } = fileData;
   // console.log(fileData)
-  const { rollNoCol, patternDefinition, blankDefination, csvTableName, imageColName } = await Template.findByPk(templateId)
+  const {
+    rollNoCol,
+    patternDefinition,
+    blankDefination,
+    csvTableName,
+    imageColName,
+  } = await Template.findByPk(templateId);
   // console.log(rollNoCol)
-
-
 
   const columns = await MappedData.findAll({
     where: {
@@ -134,7 +155,7 @@ const mainComparison = async (req, res) => {
   const formFieldValues = new Set(
     metaData
       .filter((meta) => meta.fieldType === "formfield")
-      .map((meta) => meta.attribute)
+      .map((meta) => meta.attribute),
   );
 
   // console.log(formFieldValues)
@@ -142,7 +163,7 @@ const mainComparison = async (req, res) => {
   const questionFieldValues = new Set(
     metaData
       .filter((meta) => meta.fieldType === "questionfield")
-      .map((meta) => meta.attribute)
+      .map((meta) => meta.attribute),
   );
 
   // console.log(questionFieldValues)
@@ -163,7 +184,6 @@ const mainComparison = async (req, res) => {
       .status(404)
       .json({ success: false, error: "No relevant columns found" });
   }
-
 
   if (assignData.tableName) {
     let indexToSearch = assignData.currentIndex;
@@ -186,8 +206,7 @@ const mainComparison = async (req, res) => {
         replacements: { indexToSearch },
         type: sequelize.QueryTypes.SELECT, // Ensures SELECT query type
       });
-      console.log(result)
-
+      console.log(result);
 
       const countQuery = `SELECT COUNT(*) as total FROM \`${assignData.tableName}\``;
 
@@ -210,11 +229,18 @@ const mainComparison = async (req, res) => {
       const questionData = {};
 
       const dirs = getAllDirectories(
-        path.join(__dirname, "../", "../", "extractedFiles", fileData.zipFile)
+        path.join(__dirname, "../", "../", "extractedFiles", fileData.zipFile),
       );
       const joinstr = dirs.join("/");
 
       const maindir = path.join(fileData.zipFile, joinstr, baseName);
+      // sj show duplicate
+      const isDuplicate = await checkIsDuplicateRollNo(
+        resultTwo[rollNoCol],
+        maintable,
+        rollNoCol,
+      );
+      // sj show duplicate
 
       Object.entries(resultTwo).forEach(([key, value]) => {
         if (FormCol.includes(key)) {
@@ -235,7 +261,11 @@ const mainComparison = async (req, res) => {
         reason: result.reason,
         absentflag: parseInt(result.absentflag),
         NotInMasterData: parseInt(result.NotInMasterData),
-        blank: parseInt(result.Blank)
+        blank: parseInt(result.Blank),
+    // sj checkbox
+        isDuplicate,
+        duplicateflag: parseInt(result.duplicateflag) || 0
+         // sj checkbox
       });
     } catch (error) {
       console.error("Error executing query:", error);
@@ -245,37 +275,33 @@ const mainComparison = async (req, res) => {
     }
   }
 
-
-
-  let formField = [...FormCol]
+  let formField = [...FormCol];
   const index = formField.indexOf(rollNoCol);
 
   if (index !== -1) {
     formField.splice(index, 1);
   }
 
-
-
-
-  const tableQuery = `SELECT * FROM ${scannedCsvTable}`
-  const tableData = await sequelize.query(tableQuery)
+  const tableQuery = `SELECT * FROM ${scannedCsvTable}`;
+  const tableData = await sequelize.query(tableQuery);
   // res.json(tableData[0])
 
-
   //  const scanned = await csvToJson("D:/Part A Data Entry Utility/P Backend/csvUploads/Paper_1_Part_A_.csv");
-  const scanned = tableData[0]
+  const scanned = tableData[0];
   // res.json(scanned)
 
-  const attendance = await csvToJson(path.join(__dirname, '../../csvUploads', absentCsvFile));
-  const master = await csvToJson(path.join(__dirname, '../../csvUploads', masterDataFile));
+  const attendance = await csvToJson(
+    path.join(__dirname, "../../csvUploads", absentCsvFile),
+  );
+  const master = await csvToJson(
+    path.join(__dirname, "../../csvUploads", masterDataFile),
+  );
 
   const attendanceSet = new Set(
-    attendance.map(r => String(r[rollNoCol]).trim())
+    attendance.map((r) => String(r[rollNoCol]).trim()),
   );
 
-  const masterSet = new Set(
-    master.map(r => String(r[rollNoCol]).trim())
-  );
+  const masterSet = new Set(master.map((r) => String(r[rollNoCol]).trim()));
 
   const result = [];
 
@@ -286,7 +312,7 @@ const mainComparison = async (req, res) => {
     if (roll.includes(patternDefinition)) {
       result.push({
         Reason: `Roll contains ${patternDefinition}`,
-        ...row
+        ...row,
       });
       continue;
     }
@@ -295,7 +321,7 @@ const mainComparison = async (req, res) => {
     if (!masterSet.has(roll)) {
       result.push({
         Reason: "Not Found in Master Data",
-        ...row
+        ...row,
       });
       continue;
     }
@@ -304,26 +330,22 @@ const mainComparison = async (req, res) => {
     if (attendanceSet.has(roll)) {
       result.push({
         Reason: "Found in Absent",
-        ...row
+        ...row,
       });
     }
-
 
     for (const element of formField) {
       if (row[element].includes(patternDefinition)) {
         result.push({
           Reason: `${element} has ${patternDefinition}`,
-          ...row
-        })
-        break
+          ...row,
+        });
+        break;
       }
     }
-
   }
 
   console.log(result.length);
-
-
 
   const query = `
       SELECT * FROM \`${csvTableName}\`
@@ -339,7 +361,6 @@ const mainComparison = async (req, res) => {
         Number(startIndex) === 1
           ? Number(assignData.max)
           : Number(assignData.max) + Number(startIndex),
-
     },
     type: sequelize.QueryTypes.SELECT,
   });
@@ -347,7 +368,7 @@ const mainComparison = async (req, res) => {
 
   const filteredResult = filteredData
     .map(({ id }) => {
-      const rs = result.find(item => item.id == id);
+      const rs = result.find((item) => item.id == id);
 
       if (!rs) return null;
 
@@ -361,20 +382,12 @@ const mainComparison = async (req, res) => {
     })
     .filter(Boolean);
 
-
   const assignedTableName = await processAndInsertCSV(filteredResult);
-  console.log(assignedTableName)
-  assignData.tableName = assignedTableName.tableName
-  await assignData.save()
+  console.log(assignedTableName);
+  assignData.tableName = assignedTableName.tableName;
+  await assignData.save();
 
-
-
-
-
-
-
-
-  const indexToSearch = 1
+  const indexToSearch = 1;
   try {
     const template = await Template.findByPk(templateId);
     const maintable = template.csvTableName;
@@ -384,7 +397,7 @@ const mainComparison = async (req, res) => {
       type: sequelize.QueryTypes.SELECT, // Ensures SELECT query type
     });
 
-    console.log(result)
+    console.log(result);
     const countQuery = `SELECT COUNT(*) as total FROM \`${assignData.tableName}\``;
     const [countResult] = await sequelize.query(countQuery, {
       type: sequelize.QueryTypes.SELECT,
@@ -405,12 +418,18 @@ const mainComparison = async (req, res) => {
     const questionData = {};
 
     const dirs = getAllDirectories(
-      path.join(__dirname, "../", "../", "extractedFiles", fileData.zipFile)
+      path.join(__dirname, "../", "../", "extractedFiles", fileData.zipFile),
     );
     const joinstr = dirs.join("/");
 
     const maindir = path.join(fileData.zipFile, joinstr, baseName);
-
+    // sj show duplicate
+    const isDuplicate = await checkIsDuplicateRollNo(
+      resultTwo[rollNoCol],
+      maintable,
+      rollNoCol,
+    );
+// sj show duplicate
     Object.entries(resultTwo).forEach(([key, value]) => {
       if (FormCol.includes(key)) {
         formData[key] = value;
@@ -430,7 +449,11 @@ const mainComparison = async (req, res) => {
       reason: result.reason,
       absentflag: parseInt(result.absentflag),
       NotInMasterData: parseInt(result.NotInMasterData),
-      blank: parseInt(result.Blank)
+      blank: parseInt(result.Blank),
+      // sj checkbox
+      isDuplicate,
+      duplicateflag: parseInt(result.duplicateflag) || 0
+        // sj checkbox
     });
   } catch (error) {
     console.error("Error executing query:", error);
@@ -438,7 +461,6 @@ const mainComparison = async (req, res) => {
       .status(500)
       .json({ success: false, error: "Internal Server Error" });
   }
+};
 
-}
-
-export default mainComparison
+export default mainComparison;

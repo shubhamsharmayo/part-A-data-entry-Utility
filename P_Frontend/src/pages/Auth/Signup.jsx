@@ -1,4 +1,5 @@
 import axios from "axios";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import {
   FaUserPlus,
@@ -8,7 +9,9 @@ import {
   FaLock,
   FaUserShield,
   FaCheckCircle,
+  FaEye, FaEyeSlash
 } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 const apiurl = import.meta.env.VITE_URL
 
@@ -36,10 +39,11 @@ export default function SignUp() {
     const response = await axios.post(`${apiurl}/signup`, data)
 
     if (response.status === 200) {
+      toast.success("User Created")
       reset()
     }
   };
-
+const[showPassword,setShowPassword] = useState(false)
   return (
     <div className="relative h-screen w-full overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-cyan-700 flex items-center justify-center px-3 mt-[80px]">
 
@@ -111,18 +115,21 @@ export default function SignUp() {
                 />
               </div>
 
-              <div>
+              <div className="relative">
                 <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-white">
                   <FaLock className="text-cyan-400" size={16} />
                   Password <span className="text-cyan-400">*</span>
                 </label>
                 <input
-                  type="password"
+                  type={showPassword?"text":"password"}
                   {...register("password", { required: "Password is required" })}
                   placeholder="Enter password"
                   className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2.5 text-sm text-white placeholder-gray-400 outline-none transition focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400"
                   aria-invalid={errors.password ? "true" : "false"}
                 />
+              <div className="absolute right-4 top-10">
+                  {showPassword? <FaEyeSlash onClick={()=>setShowPassword(false)}/>:<FaEye   onClick={()=>setShowPassword(true)}/>}
+              </div>
                 {errors.password && <p className="mt-1 text-xs text-red-400">{errors.password.message}</p>}
               </div>
             </div>
