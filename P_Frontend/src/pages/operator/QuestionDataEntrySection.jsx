@@ -23,7 +23,9 @@ const QuestionDataEntrySection = ({
   setblankFlag,
   absentFlag,
   masterDataFlag,
-  blankFlag
+  blankFlag,
+   duplicateFlag,
+  setduplicateFlag
 }) => {
   const [questionData, setQuestionData] = useState([]);
   const taskData = JSON.parse(localStorage.getItem("taskdata"));
@@ -320,6 +322,13 @@ const QuestionDataEntrySection = ({
               className={`mt-1 text-black text-[30px] border-none p-2 focus:border-transparent text-center rounded-lg focus:outline-none focus:ring-0  w-[50rem] bg-white`}
 
             />
+              {/* //   sj checkbox */}
+     {data?.isDuplicate && (
+             <div className="text-red-500 text-center text-xl font-bold mt-1">
+    Duplicate
+  </div>
+            )}
+     {/* //   sj checkbox */}
           </div>
 
           <div className="flex w-[50rem] justify-around text-black" >
@@ -350,6 +359,19 @@ const QuestionDataEntrySection = ({
               />
               <label htmlFor="" className="text-black">Center Code Blank</label>
             </h2>
+       {/* //   sj checkbox */}
+            {data?.isDuplicate && (
+              <h2 className="text-sm 2xl:text-xl mx-4 font-bold 2xl:pt-1  bg-blue-200 p-2 rounded-lg border border-blue-400  flex gap-3">
+                <input
+                  type="checkbox"
+                  id="duplicate"
+                checked={duplicateFlag}
+                onChange={(e) => setduplicateFlag(e.target.checked)}
+                />
+                <label htmlFor="" className="text-black">Duplicate</label>
+              </h2>
+            )}
+              {/* //   sj checkbox */}
           </div>
 
 

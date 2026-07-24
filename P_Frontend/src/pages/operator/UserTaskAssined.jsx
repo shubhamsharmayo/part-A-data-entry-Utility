@@ -169,7 +169,7 @@ console.log(userData)
         <section className="mx-auto max-w-5xl  px-10 py-10 bg-white rounded-xl w-[100vw]">
           <div className="flex flex-col space-y-4  md:flex-row md:items-center md:justify-between md:space-y-0">
             <div>
-              <h2 className="text-3xl font-semibold">Assigned Tasks</h2>
+              <h2 className="text-3xl  font-semibold" style={{color:"black"}}>Assigned Tasks</h2>
             </div>
           </div>
           <div className="hidden sm:block mt-4">

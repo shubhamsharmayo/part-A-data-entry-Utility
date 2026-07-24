@@ -22,6 +22,7 @@ const menuItems = [
     permission: "dataEntry",
     href: "datamatching",
   },
+
   // {
   //   name: "CSV Compare",
   //   href: "comparecsv",
@@ -91,7 +92,10 @@ export default function Navbar() {
       //   navigate(currentPath);
       // } else {
       const firstAllowedLink = menuItems.find(
-        (item) => userDatas.permissions[item.permission]
+        (item) => {
+          if (item.adminOnly && userDatas.role !== "Admin") return false;
+          return userDatas.permissions[item.permission];
+        }
       );
       console.log(firstAllowedLink)
       if (firstAllowedLink) {
@@ -200,6 +204,7 @@ export default function Navbar() {
     userDatas &&
     menuItems?.filter((item) => {
       if (Object.keys(userDatas).length !== 0) {
+        if (item.adminOnly && userDatas.role !== "Admin") return false;
         return userDatas?.permissions[item?.permission];
       }
     });

@@ -3,6 +3,9 @@ import Template from "../../models/template.js";
 import Assigndata from "../../models/assigndata.js";
 import sequelize from "../../utils/database.js";
 import Files from "../../models/filedata.js";
+  // sj checkbox
+import { checkIsDuplicateRollNo } from "../../services/duplicateRollCheck.js";
+  // sj checkbox
 
 
 // function validateUpdatedData(joinedData = [], updatedData = {}) {
@@ -214,7 +217,9 @@ const updateMainCsvData = async (req, res) => {
 
     console.log(req.body)
     try {
-        const { templateId, parentId, updatedData, editedData, taskId, email, absentFlag, masterdataFlag, blankFlag } = req.body;
+          // sj checkbox
+       const { templateId, parentId, updatedData, editedData, taskId, email, absentFlag, masterdataFlag, blankFlag, duplicateFlag } = req.body;
+         // sj checkbox
         // console.log(req.user.email)
         // console.log(parentId)
         // console.log(editedData)
@@ -323,7 +328,32 @@ const updateMainCsvData = async (req, res) => {
                 message: "Roll number is absent"
             })
         }
+  // sj checkbox
+        const isDuplicate = await checkIsDuplicateRollNo(
+            updatedData[template.rollNoCol],
+            template.csvTableName,
+            template.rollNoCol
+        );
 
+        if (isDuplicate && !duplicateFlag) {
+            return res.status(400).json({
+                message: "Roll number is duplicate"
+            })
+        }
+
+       try {
+            await sequelize.query(
+                `ALTER TABLE \`${tableName}\` ADD COLUMN duplicateflag TINYINT DEFAULT 0 AFTER Blank`
+            );
+        } catch (alterError) {
+            const alreadyExists =
+                alterError?.original?.code === "ER_DUP_FIELDNAME" ||
+                /duplicate column name/i.test(alterError.message || "");
+            if (!alreadyExists) {
+                throw alterError;
+            }
+        }
+  // sj checkbox
 
         // Step 1: Fetch existing Corrected data
         const [existingData] = await sequelize.query(
@@ -348,12 +378,14 @@ const updateMainCsvData = async (req, res) => {
         const updatedCorrected = { ...correctedData, ...result };
 
         // Step 4: Update the database with merged data
+          //   sj checkbox
         const query1 = `
-  UPDATE ${tableName}
-  SET Corrected_By = :email, Corrected = :updatedData, absentflag=:absentflag, NotInMasterData=:NotInMasterData, blank=:blank
+      
+ UPDATE ${tableName}
+  SET Corrected_By = :email, Corrected = :updatedData, absentflag=:absentflag, NotInMasterData=:NotInMasterData, blank=:blank, duplicateflag=:duplicateflag
   WHERE parentId = :parentId
 `;
-
+  //   sj checkbox
         await sequelize.query(query1, {
             replacements: {
                 email: email,
@@ -361,7 +393,10 @@ const updateMainCsvData = async (req, res) => {
                 updatedData: JSON.stringify(updatedCorrected),
                 absentflag: absentFlag,
                 NotInMasterData: masterdataFlag,
-                blank: blankFlag
+                blank: blankFlag,
+                  //   sj checkbox
+                duplicateflag: duplicateFlag ? 1 : 0
+                  //   sj checkbox
             },
             type: sequelize.QueryTypes.UPDATE,
         });

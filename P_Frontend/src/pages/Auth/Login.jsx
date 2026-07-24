@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { userData} from '../../context/userData'
 import { FaUserCircle, FaEye, FaEyeSlash, FaSignInAlt } from "react-icons/fa";
+import { toast } from 'react-toastify';
 
 
 
@@ -22,17 +23,21 @@ const Login = () => {
     } = useForm()
 
     const onSubmit = async (data) => {
-        // console.log(data)
-
-        const response = await axios.post(`${apiurl}/login`,data)
+    try {
+        const response = await axios.post(`${apiurl}/login`, data)
         console.log(response)
 
-        localStorage.setItem('userdata' ,JSON.stringify(response.data))
+        localStorage.setItem('userdata', JSON.stringify(response.data))
         setUser(JSON.parse(localStorage.getItem('userdata')))
+    } catch (error) {
+        const errorMessage =
+            error.response?.data?.error ||
+            error.response?.data?.message ||
+            "Something went wrong, please try again";
 
-       
-
+        toast.error(errorMessage);
     }
+}
 
     // console.log(watch("example"))
 return (
